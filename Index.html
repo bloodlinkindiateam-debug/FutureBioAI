@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FutureBioAI</title>
+
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: linear-gradient(135deg, #07111f, #102a43);
+      color: white;
+      min-height: 100vh;
+    }
+
+    .container {
+      max-width: 900px;
+      margin: auto;
+      padding: 30px 18px;
+    }
+
+    .header {
+      text-align: center;
+      padding: 35px 10px;
+    }
+
+    .logo {
+      font-size: 55px;
+    }
+
+    h1 {
+      font-size: 42px;
+      margin: 8px 0;
+    }
+
+    .subtitle {
+      color: #b8c7d9;
+      margin: 6px;
+    }
+
+    .card {
+      background: rgba(255,255,255,0.07);
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 20px;
+      padding: 22px;
+      margin-top: 20px;
+    }
+
+    textarea {
+      width: 100%;
+      min-height: 120px;
+      padding: 16px;
+      border-radius: 14px;
+      border: 1px solid #40536b;
+      background: #0d1b2a;
+      color: white;
+      font-size: 16px;
+      resize: vertical;
+    }
+
+    button {
+      width: 100%;
+      margin-top: 14px;
+      padding: 15px;
+      border: 0;
+      border-radius: 14px;
+      background: #19a974;
+      color: white;
+      font-size: 17px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    button:hover {
+      opacity: 0.9;
+    }
+
+    #answer {
+      white-space: pre-wrap;
+      line-height: 1.7;
+      color: #e5edf5;
+    }
+
+    .stats {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .stat {
+      flex: 1;
+      min-width: 150px;
+      background: #0d1b2a;
+      padding: 15px;
+      border-radius: 14px;
+      text-align: center;
+    }
+
+    .stat strong {
+      display: block;
+      font-size: 25px;
+      margin-bottom: 5px;
+    }
+
+    .footer {
+      text-align: center;
+      margin-top: 30px;
+      color: #8192a6;
+      font-size: 13px;
+    }
+  </style>
+</head>
+
+<body>
+
+<div class="container">
+
+  <div class="header">
+    <div class="logo">🧬</div>
+
+    <h1>FutureBioAI</h1>
+
+    <div class="subtitle">
+      Biology Research & Learning Assistant
+    </div>
+
+    <div class="subtitle">
+      Built by Rajneesh Chaturvedi
+    </div>
+  </div>
+
+  <div class="stats">
+
+    <div class="stat">
+      <strong id="sections">...</strong>
+      Knowledge Sections
+    </div>
+
+    <div class="stat">
+      <strong>📚</strong>
+      Biology
+    </div>
+
+    <div class="stat">
+      <strong>🔎</strong>
+      Smart Search
+    </div>
+
+  </div>
+
+  <div class="card">
+
+    <h2>Ask FutureBioAI</h2>
+
+    <textarea
+      id="question"
+      placeholder="Example: What is photosynthesis?"
+    ></textarea>
+
+    <button onclick="askFutureBioAI()">
+      🚀 Ask FutureBioAI
+    </button>
+
+  </div>
+
+  <div class="card">
+
+    <h2>🧠 Answer</h2>
+
+    <div id="answer">
+      Apna Biology question poochho...
+    </div>
+
+  </div>
+
+  <div class="footer">
+    FutureBioAI • Biology Research & Learning Assistant
+  </div>
+
+</div>
+
+<script>
+
+let knowledge = [];
+
+
+/* Load knowledge database */
+
+async function loadKnowledge() {
+
+  try {
+
+    const response =
+      await fetch("./futurebio_knowledge.json");
+
+    if (!response.ok) {
+      throw new Error("Database not found");
+    }
+
+    knowledge = await response.json();
+
+    document.getElementById("sections").innerText =
+      knowledge.length;
+
+  }
+
+  catch(error) {
+
+    document.getElementById("sections").innerText = "0";
+
+    document.getElementById("answer").innerText =
+      "Knowledge database load nahi ho paya. Check karo ki futurebio_knowledge.json bhi repository mein uploaded hai.";
+
+    console.error(error);
+
+  }
+
+}
+
+
+/* Convert question into words */
+
+function getWords(text) {
+
+  return text
+    .toLowerCase()
+    .replace(/[^\w\s]/g, " ")
+    .split(/\s+/)
+    .filter(word => word.length > 2);
+
+}
+
+
+/* Search knowledge */
+
+function searchKnowledge(question) {
+
+  const queryWords = getWords(question);
+
+  let results = [];
+
+  for (const item of knowledge) {
+
+    const content =
+      String(item.content || "").toLowerCase();
+
+    let score = 0;
+
+    for (const word of queryWords) {
+
+      if (content.includes(word)) {
+        score++;
+      }
+
+    }
+
+    results.push({
+      score: score,
+      content: item.content,
+      source: item.source || "Biology Knowledge",
+      section: item.section || ""
+    });
+
+  }
+
+  results.sort((a, b) => b.score - a.score);
+
+  return results
+    .filter(item => item.score > 0)
+    .slice(0, 3);
+
+}
+
+
+/* Ask FutureBioAI */
+
+function askFutureBioAI() {
+
+  const question =
+    document.getElementById("question").value.trim();
+
+  const answerBox =
+    document.getElementById("answer");
+
+
+  if (!question) {
+
+    answerBox.innerText =
+      "Please apna Biology question likho.";
+
+    return;
+
+  }
+
+
+  if (knowledge.length === 0) {
+
+    answerBox.innerText =
+      "Knowledge database available nahi hai.";
+
+    return;
+
+  }
+
+
+  const results =
+    searchKnowledge(question);
+
+
+  if (results.length === 0) {
+
+    answerBox.innerText =
+      "Is question ke liye provided Biology knowledge mein relevant information nahi mili.";
+
+    return;
+
+  }
+
+
+  let answer =
+    "Relevant Biology Information:\n\n";
+
+
+  results.forEach((item, index) => {
+
+    answer +=
+      "📚 Result " +
+      (index + 1) +
+      "\n";
+
+    answer +=
+      "Source: " +
+      item.source +
+      "\n";
+
+    answer +=
+      "Section: " +
+      item.section +
+      "\n\n";
+
+    answer +=
+      item.content +
+      "\n\n";
+
+    answer +=
+      "────────────────────\n\n";
+
+  });
+
+
+  answerBox.innerText = answer;
+
+}
+
+
+/* Start */
+
+loadKnowledge();
+
+</script>
+
+</body>
+</html>
