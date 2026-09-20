@@ -1,0 +1,5 @@
+gradio
+transformers
+sentencepiece
+scikit-learn
+torch
